@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SpongeBob 3D - ПОДВОДНЫЕ ГОНКИ</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Arial', sans-serif; }
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 38px;
+            font-weight: bold;
+            background: rgba(0,0,0,0.7);
+            padding: 12px 28px;
+            border-radius: 30px;
+            z-index: 100;
+            font-family: monospace;
+            border: 2px solid #ffcc00;
+            display: none;
+        }
+        #fishCount {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #ffd700;
+            font-size: 30px;
+            font-weight: bold;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 25px;
+            border-radius: 30px;
+            z-index: 100;
+            font-family: monospace;
+            border: 2px solid #ffaa00;
+            display: none;
+        }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 48px;
+            background: rgba(0,0,0,0.95);
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            z-index: 100;
+            display: none;
+            min-width: 420px;
+            border: 2px solid #ff9800;
+        }
+        #gameOver button {
+            font-size: 24px;
+            padding: 12px 35px;
+            margin-top: 25px;
+            background: #ff9800;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-size: 16px;
+            z-index: 100;
+            display: none;
+        }
+        .controls kbd {
+            background: #222;
+            padding: 4px 12px;
+            border-radius: 10px;
+            margin: 0 4px;
+        }
+        .info {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #ffcc80;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            z-index: 100;
+            display: none;
+        }
+        .overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            background: rgba(0, 20, 40, 0.85);
+        }
+        .overlay.hidden { display: none; }
+        .menu-box {
+            background: linear-gradient(145deg, #0a3d6b, #06203a);
+            border: 3px solid #ffd700;
+            border-radius: 40px;
+            padding: 50px 60px;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(0,150,255,0.3);
+            max-width: 700px;
+            width: 90%;
+        }
+        .menu-box h1 {
+            color: #ffd700;
+            font-size: 52px;
+            margin: 0 0 5px 0;
+            text-shadow: 0 0 20px rgba(255,215,0,0.5);
+        }
+        .menu-box h2 {
+            color: #80d0ff;
+            font-size: 24px;
+            margin: 0 0 30px 0;
+            font-weight: normal;
+        }
+        .menu-btn {
+            font-size: 26px;
+            padding: 15px 50px;
+            margin: 10px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+            min-width: 200px;
+        }
+        .menu-btn:hover { transform: scale(1.05); }
+        .menu-btn.play { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; }
+        .menu-btn.shop { background: linear-gradient(135deg, #00b894, #00a381); color: white; }
+        .menu-btn.back { background: linear-gradient(135deg, #636e72, #495057); color: white; font-size: 20px; padding: 12px 40px; margin-top: 20px; }
+        .selected-char-label { color: #aaa; font-size: 16px; margin-top: 25px; }
+        .selected-char-label span { color: #ffd700; font-weight: bold; }
+        .shop-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .char-card {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 15px;
+            width: 130px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .char-card:hover {
+            border-color: #ffd700;
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-5px);
+        }
+        .char-card.selected {
+            border-color: #ffd700;
+            background: rgba(255,215,0,0.15);
+            box-shadow: 0 0 20px rgba(255,215,0,0.3);
+        }
+        .char-card .preview {
+            width: 80px; height: 80px;
+            margin: 0 auto 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+        .char-card .name { color: white; font-size: 16px; font-weight: bold; }
+        .char-card .status { color: #ffd700; font-size: 14px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div id="score">🧽 СЧЁТ: <span id="scoreNum">0</span></div>
+    <div id="fishCount">🐟 <span id="fishNum">0</span></div>
+    <div id="gameOver">
+        💀 GAME OVER 💀<br>
+        <span id="finalScore" style="font-size: 70px; color: #ff9800;">0</span><br>
+        <div style="font-size:28px;margin-top:10px">🐟 Рыбок: <span id="finalFish">0</span></div>
+        <button onclick="location.reload()">🔄 ИГРАТЬ СНОВА</button>
+    </div>
+    <div class="controls">
+        🎮 <kbd>←</kbd> <kbd>→</kbd> - дорожки &nbsp;&nbsp;
+        <kbd>↑</kbd> - ПРЫЖОК &nbsp;&nbsp;
+        <kbd>↓</kbd> - КУВЫРОК
+    </div>
+    <div class="info">
+        🏪 МАГАЗИНЧИКИ | 🌳 ДЕРЕВЬЯ | ⛵ ЛОДКИ | 🐟 РЫБКИ
+    </div>
+
+    <div id="mainMenu" class="overlay">
+        <div class="menu-box">
+            <h1>🧽 SPONGEBOB</h1>
+            <h2>🌊 ПОДВОДНЫЕ ГОНКИ 3D</h2>
+            <button class="menu-btn play" id="playBtn">▶ ИГРАТЬ</button><br>
+            <button class="menu-btn shop" id="shopBtn">🏪 МАГАЗИН</button>
+            <div class="selected-char-label">🪙 Монет: <span id="menuCoinCount">0</span> &nbsp;|&nbsp; Персонаж: <span id="menuSelectedChar">Губка Боб</span></div>
+        </div>
+    </div>
+
+    <div id="shopMenu" class="overlay hidden">
+        <div class="menu-box">
+            <h1>🏪 МАГАЗИН</h1>
+            <h2>Выбери персонажа &nbsp;|&nbsp; 🪙 <span id="shopCoinCount">0</span></h2>
+            <div class="shop-grid" id="charGrid"></div>
+            <button class="menu-btn back" id="shopBackBtn">← НАЗАД</button>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        const scene = new THREE.Scene();
+        const bgCanvas = document.createElement('canvas');
+        bgCanvas.width = 2; bgCanvas.height = 512;
+        const ctx = bgCanvas.getContext('2d');
+        const grad = ctx.createLinearGradient(0,0,0,512);
+        grad.addColorStop(0, '#b8e6f0');
+        grad.addColorStop(0.3, '#6ec7e0');
+        grad.addColorStop(0.6, '#0088bb');
+        grad.addColorStop(1, '#003366');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0,0,2,512);
+        const bgTex = new THREE.CanvasTexture(bgCanvas);
+        scene.background = bgTex;
+        scene.fog = new THREE.Fog(0x003366, 15, 40);
+
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 2.8, 7.5);
+        camera.lookAt(0, 1, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0x446688));
+        const mainLight = new THREE.DirectionalLight(0xbbddff, 1.0);
+        mainLight.position.set(5, 18, 5);
+        mainLight.castShadow = true;
+        scene.add(mainLight);
+        scene.add(new THREE.PointLight(0x88ccff, 0.4));
+
+        const bubbles = [];
+        const bubbleMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, emissive: 0x88ccff, emissiveIntensity: 0.1 });
+        for (let i = 0; i < 80; i++) {
+            const b = new THREE.Mesh(new THREE.SphereGeometry(0.02 + Math.random()*0.08, 6, 6), bubbleMat);
+            b.position.set(Math.random()*20-10, Math.random()*15-2, Math.random()*20-30);
+            b.userData = { speed: 0.005 + Math.random()*0.02, phase: Math.random()*Math.PI*2, drift: Math.random()*0.3-0.15 };
+            scene.add(b);
+            bubbles.push(b);
+        }
+
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(35, 100),
+            new THREE.MeshStandardMaterial({ color: 0x8B7355 })
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.45;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        const coralColors = [0xff6b81, 0xff9f43, 0xff4757, 0xffa502, 0xee5a24, 0xff7979];
+        for (let side = -1; side <= 1; side += 2) {
+            for (let z = -25; z < 20; z += 4) {
+                const coral = new THREE.Group();
+                const cc = coralColors[Math.floor(Math.random()*coralColors.length)];
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 1.2, 6), new THREE.MeshStandardMaterial({ color: 0xcc6644 }));
+                trunk.position.y = 0.6; trunk.castShadow = true; coral.add(trunk);
+                const f1 = new THREE.Mesh(new THREE.SphereGeometry(0.3, 6, 6), new THREE.MeshStandardMaterial({ color: cc }));
+                f1.position.set(Math.random()*0.3-0.15, 1.0, 0); f1.scale.set(1,0.7,1); coral.add(f1);
+                const f2 = new THREE.Mesh(new THREE.SphereGeometry(0.25, 6, 6), new THREE.MeshStandardMaterial({ color: cc }));
+                f2.position.set(Math.random()*0.3-0.15, 1.4, 0.1); f2.scale.set(1,0.7,1); coral.add(f2);
+                const f3 = new THREE.Mesh(new THREE.SphereGeometry(0.2, 6, 6), new THREE.MeshStandardMaterial({ color: cc }));
+                f3.position.set(Math.random()*0.3-0.15, 1.8, -0.1); f3.scale.set(1,0.7,1); coral.add(f3);
+                coral.position.set(side * 4.0, -0.35, z);
+                scene.add(coral);
+            }
+        }
+        
+        function buildPineapple(side, z) {
+            const g = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), new THREE.MeshStandardMaterial({ color: 0xff8c00 }));
+            body.position.y = 0.8; body.scale.set(1.2, 1.3, 1); body.castShadow = true; g.add(body);
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+            for (let a = 0; a < 5; a++) {
+                const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.3, 4), leafMat);
+                leaf.position.set(Math.sin(a*1.3)*0.2, 1.5+Math.random()*0.1, Math.cos(a*1.3)*0.2);
+                leaf.rotation.z = Math.sin(a*1.3)*0.3; leaf.rotation.x = Math.cos(a*1.3)*0.3;
+                g.add(leaf);
+            }
+            const door = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.4, 0.05), new THREE.MeshStandardMaterial({ color: 0x8B4513 }));
+            door.position.set(0, 0.55, 0.75); g.add(door);
+            g.position.set(side, -0.4, z); return g;
+        }
+        function buildRock(side, z) {
+            const g = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.75, 10, 10), new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.9 }));
+            body.position.y = 0.65; body.scale.set(1.1, 0.8, 1); body.castShadow = true; g.add(body);
+            const door = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.35, 0.05), new THREE.MeshStandardMaterial({ color: 0x5a3a1a }));
+            door.position.set(0, 0.45, 0.8); g.add(door);
+            g.position.set(side, -0.4, z); return g;
+        }
+        function buildMoai(side, z) {
+            const g = new THREE.Group();
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 10), new THREE.MeshStandardMaterial({ color: 0x887766, roughness: 0.8 }));
+            head.position.y = 0.8; head.scale.set(0.9, 1.1, 1); head.castShadow = true; g.add(head);
+            const brow = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 0.2), new THREE.MeshStandardMaterial({ color: 0x665544 }));
+            brow.position.set(0, 0.95, 0.55); g.add(brow);
+            const nose = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.2, 6), new THREE.MeshStandardMaterial({ color: 0x887766 }));
+            nose.position.set(0, 0.8, 0.6); nose.rotation.x = 0.2; g.add(nose);
+            g.position.set(side, -0.4, z); return g;
+        }
+        function buildAnchor(side, z) {
+            const g = new THREE.Group();
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 1.4, 6), new THREE.MeshStandardMaterial({ color: 0xcc2222 }));
+            pole.position.y = 0.7; pole.castShadow = true; g.add(pole);
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.04, 6, 8), new THREE.MeshStandardMaterial({ color: 0xcc2222 }));
+            ring.position.y = 1.4; ring.rotation.x = Math.PI/2; g.add(ring);
+            const cross = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.06, 0.06), new THREE.MeshStandardMaterial({ color: 0xcc2222 }));
+            cross.position.y = 1.05; g.add(cross);
+            const lArm = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.25, 0.04), new THREE.MeshStandardMaterial({ color: 0xcc2222 }));
+            lArm.position.set(0.06, 0.69, 0); lArm.rotation.z = 0.4; g.add(lArm);
+            const rArm = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.25, 0.04), new THREE.MeshStandardMaterial({ color: 0xcc2222 }));
+            rArm.position.set(-0.06, 0.69, 0); rArm.rotation.z = -0.4; g.add(rArm);
+            g.position.set(side, -0.4, z); return g;
+        }
+        const houseBuilders = [buildPineapple, buildRock, buildMoai, buildAnchor];
+        for (let i = -24; i < 20; i += 3.0) {
+            [-4.8, 4.8].forEach(side => {
+                const builder = houseBuilders[Math.floor(Math.random()*houseBuilders.length)];
+                scene.add(builder(side, i));
+            });
+        }
+
+        const railPositions = [-2.3, 0, 2.3];
+        const railsGroup = new THREE.Group();
+        scene.add(railsGroup);
+        
+        for (let i = 0; i < 3; i++) {
+            for (let z = -35; z < 30; z += 1.4) {
+                const sleeper = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, 0.3), new THREE.MeshStandardMaterial({ color: 0x8B5A2B }));
+                sleeper.position.set(railPositions[i], -0.32, z);
+                sleeper.castShadow = true;
+                railsGroup.add(sleeper);
+            }
+            const railMat = new THREE.MeshStandardMaterial({ color: 0xccaa55, metalness: 0.7 });
+            [-0.5, 0.5].forEach(off => {
+                const rail = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.12, 85), railMat);
+                rail.position.set(railPositions[i] + off, -0.28, 0);
+                rail.castShadow = true;
+                railsGroup.add(rail);
+            });
+        }
+
+        const playerGroup = new THREE.Group();
+        let leftArm, rightArm, leftLeg, rightLeg;
+        playerGroup.position.set(0, -0.2, 2.8);
+        playerGroup.castShadow = true;
+        scene.add(playerGroup);
+
+        // ===== CHARACTER DEFINITIONS =====
+        function buildSpongeBob(g) {
+            const bm = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.8 });
+            const hm = new THREE.MeshStandardMaterial({ color: 0xc8a000, roughness: 1.0 });
+            const sb = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.65), bm);
+            sb.position.y = 0.52; sb.castShadow = true; g.add(sb);
+            [[-0.25,0.65,0.38],[-0.15,0.7,0.38],[0.15,0.72,0.38],[0.25,0.62,0.38],
+             [-0.2,0.55,0.38],[0.2,0.55,0.38],[0,0.55,0.38],
+             [-0.15,0.45,0.38],[0.1,0.48,0.38],[-0.25,0.38,0.38],[0.2,0.38,0.38],
+             [-0.1,0.3,0.38],[0.15,0.3,0.38],[0,0.2,0.38],
+             [-0.2,0.15,0.38],[0.25,0.2,0.38]].forEach(p => {
+                const h = new THREE.Mesh(new THREE.CircleGeometry(0.02+Math.random()*0.025, 8), hm);
+                h.position.set(p[0], p[1], p[2]); g.add(h);
+            });
+            const we = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const pe = new THREE.MeshStandardMaterial({ color: 0x111111 });
+            const ie = new THREE.MeshStandardMaterial({ color: 0x3399ff });
+            [-0.2,0.2].forEach(x => {
+                const e = new THREE.Mesh(new THREE.SphereGeometry(0.17,16,16), we);
+                e.position.set(x,0.72,0.42); g.add(e);
+                const ir = new THREE.Mesh(new THREE.CircleGeometry(0.09,16), ie);
+                ir.position.set(x,0.72,0.56); g.add(ir);
+                const pu = new THREE.Mesh(new THREE.CircleGeometry(0.05,10), pe);
+                pu.position.set(x,0.72,0.58); g.add(pu);
+            });
+            const brm = new THREE.MeshStandardMaterial({ color: 0x222222 });
+            [-0.2,0.2].forEach(x => {
+                const br = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.015,0.04), brm);
+                br.position.set(x,0.82,0.44); br.rotation.z = x > 0 ? -0.1 : 0.1; g.add(br);
+            });
+            const lm = new THREE.MeshStandardMaterial({ color: 0x111111 });
+            [[-0.26,0.82,0.45],[-0.22,0.84,0.45],[-0.18,0.84,0.45],
+             [0.18,0.84,0.45],[0.22,0.84,0.45],[0.26,0.82,0.45]].forEach(p => {
+                const l = new THREE.Mesh(new THREE.CylinderGeometry(0.003,0.003,0.06,4), lm);
+                l.position.set(p[0],p[1],p[2]); l.rotation.x = 0.3; g.add(l);
+            });
+            const cm = new THREE.MeshStandardMaterial({ color: 0xff6b6b });
+            [-0.35,0.35].forEach(x => {
+                const c = new THREE.Mesh(new THREE.SphereGeometry(0.09,10,10), cm);
+                c.position.set(x,0.42,0.36); c.scale.set(1.1,0.6,0.6); g.add(c);
+            });
+            const nm = new THREE.MeshStandardMaterial({ color: 0xffcc44 });
+            const no = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.05,0.08,8), nm);
+            no.position.set(0,0.55,0.42); no.rotation.x = 0.3; g.add(no);
+            const mm = new THREE.MeshStandardMaterial({ color: 0xcc3333 });
+            const mo = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.03,0.06), mm);
+            mo.position.set(0,0.26,0.42); mo.rotation.z = 0.08; g.add(mo);
+            const sm = new THREE.MeshStandardMaterial({ color: 0x991111 });
+            const sl = new THREE.Mesh(new THREE.BoxGeometry(0.35,0.02,0.04), sm);
+            sl.position.set(0,0.24,0.43); sl.rotation.z = -0.05; g.add(sl);
+            const tm = new THREE.MeshStandardMaterial({ color: 0xffeeee });
+            [-0.06,0.06].forEach(x => {
+                const t = new THREE.Mesh(new THREE.BoxGeometry(0.045,0.07,0.06), tm);
+                t.position.set(x,0.3,0.42); g.add(t);
+            });
+            const tng = new THREE.MeshStandardMaterial({ color: 0xff7777 });
+            const tn = new THREE.Mesh(new THREE.SphereGeometry(0.04,8,8), tng);
+            tn.position.set(0,0.22,0.42); tn.scale.set(1.5,0.5,0.5); g.add(tn);
+            const fm = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            for (let i=0;i<4;i++) {
+                const f = new THREE.Mesh(new THREE.CircleGeometry(0.012,6), fm);
+                f.position.set(-0.33+i*0.06,0.38,0.42); g.add(f);
+            }
+            for (let i=0;i<4;i++) {
+                const f = new THREE.Mesh(new THREE.CircleGeometry(0.012,6), fm);
+                f.position.set(0.08+i*0.06,0.38,0.42); g.add(f);
+            }
+            const clm = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            [-0.06,0.06].forEach((x,idx) => {
+                const cl = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.04,0.12), clm);
+                cl.position.set(x,0.22,0.35); cl.rotation.z = idx===0 ? 0.3 : -0.3; g.add(cl);
+            });
+            const sh = new THREE.Mesh(new THREE.BoxGeometry(0.55,0.14,0.4), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+            sh.position.set(0,0.22,0); sh.castShadow = true; g.add(sh);
+            const tM = new THREE.MeshStandardMaterial({ color: 0xcc0000 });
+            const ti = new THREE.Mesh(new THREE.BoxGeometry(0.04,0.18,0.06), tM);
+            ti.position.set(0,0.18,0.34); g.add(ti);
+            const tk = new THREE.Mesh(new THREE.BoxGeometry(0.07,0.03,0.07), new THREE.MeshStandardMaterial({ color: 0xaa0000 }));
+            tk.position.set(0,0.24,0.33); g.add(tk);
+            const pn = new THREE.Mesh(new THREE.BoxGeometry(0.52,0.1,0.4), new THREE.MeshStandardMaterial({ color: 0x8B4513 }));
+            pn.position.set(0,0.05,0); pn.castShadow = true; g.add(pn);
+            const bl = new THREE.Mesh(new THREE.BoxGeometry(0.52,0.03,0.4), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+            bl.position.set(0,0.1,0); g.add(bl);
+            const bu = new THREE.Mesh(new THREE.BoxGeometry(0.08,0.04,0.04), new THREE.MeshStandardMaterial({ color: 0x888888 }));
+            bu.position.set(0,0.1,0.25); g.add(bu);
+            const lgM = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            [-0.16,0.16].forEach((x,idx) => {
+                const l = new THREE.Mesh(new THREE.BoxGeometry(0.16,0.3,0.16), lgM);
+                l.position.set(x,-0.08,0); l.castShadow = true; g.add(l);
+                if (idx===0) leftLeg=l; else rightLeg=l;
+            });
+            const skM = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
+            [-0.16,0.16].forEach(x => {
+                const s = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.06,0.14), skM);
+                s.position.set(x,-0.22,0); g.add(s);
+            });
+            const sbM = new THREE.MeshStandardMaterial({ color: 0xcc0000 });
+            [-0.16,0.16].forEach(x => {
+                const s = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.02,0.14), sbM);
+                s.position.set(x,-0.2,0); g.add(s);
+            });
+            const shM = new THREE.MeshStandardMaterial({ color: 0x111111 });
+            [-0.16,0.16].forEach(x => {
+                const sh = new THREE.Mesh(new THREE.BoxGeometry(0.22,0.08,0.32), shM);
+                sh.position.set(x,-0.3,0.04); g.add(sh);
+                const st = new THREE.Mesh(new THREE.SphereGeometry(0.07,8,8), shM);
+                st.position.set(x,-0.28,0.2); st.scale.set(1.2,0.6,1); g.add(st);
+            });
+            const am = new THREE.MeshStandardMaterial({ color: 0xffd700 });
+            [-0.48,0.48].forEach((x, idx) => {
+                const a = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.45,0.14), am);
+                a.position.set(x,0.38,0); a.castShadow = true; g.add(a);
+                if (idx===0) leftArm=a; else rightArm=a;
+            });
+        }
+
+        function buildPatrick(g) {
+            const pm = new THREE.MeshStandardMaterial({ color: 0xFFB6C1, roughness: 0.85, metalness: 0 });
+            const gM = new THREE.MeshStandardMaterial({ color: 0x2E8B57, roughness: 0.8, metalness: 0 });
+
+            // 5-pointed star — arms lowered, legs elongated and rounded
+            const shape = new THREE.Shape();
+            const innerR = 0.14;
+            // Angles for outer points (rays): head, left-arm, left-leg, right-leg, right-arm
+            const outerAngles = [90, 200, 250, 290, 340];
+            const outerRadii = [0.45, 0.3, 0.72, 0.72, 0.3];
+            // Inner points between outer rays
+            const innerAngles = [];
+            for (let i = 0; i < 5; i++) {
+                const next = (i + 1) % 5;
+                let a = (outerAngles[i] + outerAngles[next]) / 2;
+                if (outerAngles[i] > outerAngles[next]) a += 180;
+                innerAngles.push(a);
+            }
+
+            for (let i = 0; i < 10; i++) {
+                const isOuter = i % 2 === 0;
+                const idx = Math.floor(i / 2);
+                const angle = (isOuter ? outerAngles[idx] : innerAngles[idx]) * Math.PI / 180;
+                const rad = isOuter ? outerRadii[idx] : innerR;
+                const x = Math.cos(angle) * rad;
+                const y = Math.sin(angle) * rad;
+                if (i === 0) shape.moveTo(x, y);
+                else shape.lineTo(x, y);
+            }
+            shape.closePath();
+
+            const starGeom = new THREE.ExtrudeGeometry(shape, {
+                depth: 0.3,
+                bevelEnabled: true,
+                bevelThickness: 0.15,
+                bevelSize: 0.12,
+                bevelSegments: 14,
+            });
+            // Stretch upward
+            const pos = starGeom.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                pos.setY(i, pos.getY(i) * 1.35);
+            }
+            pos.needsUpdate = true;
+            starGeom.computeVertexNormals();
+
+            starGeom.translate(0, -0.1, -0.15);
+            const star = new THREE.Mesh(starGeom, pm);
+            star.position.set(0, 0.35, 0); star.rotation.y = Math.PI; star.castShadow = true; g.add(star);
+
+            // Rounded tips on all rays
+            const tips = [
+                { x: 0, y: 0.6, s: 0.06 },       // head
+                { x: -0.28, y: -0.2, s: 0.05 },   // left arm
+                { x: 0.28, y: -0.2, s: 0.05 },    // right arm
+                { x: -0.52, y: -0.55, s: 0.09 },  // left leg (bigger)
+                { x: 0.52, y: -0.55, s: 0.09 },   // right leg (bigger)
+            ];
+            tips.forEach(t => {
+                const tip = new THREE.Mesh(new THREE.SphereGeometry(t.s, 12, 12), pm);
+                tip.position.set(t.x, t.y, 0); g.add(tip);
+            });
+
+            // Extra smoothing spheres at leg base
+            [{ x: -0.3, y: -0.35, s: 0.07 }, { x: 0.3, y: -0.35, s: 0.07 }].forEach(t => {
+                const s = new THREE.Mesh(new THREE.SphereGeometry(t.s, 10, 10), pm);
+                s.position.set(t.x, t.y, 0); g.add(s);
+            });
+
+            // Eyes on top arm
+            const we = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+            const pe = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
+            [-0.07, 0.07].forEach(x => {
+                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 12), we);
+                eye.position.set(x, 0.8, 0.12); eye.scale.set(1.0, 0.35, 0.6); g.add(eye);
+                const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), pe);
+                pupil.position.set(x, 0.8, 0.18); g.add(pupil);
+                const eyelid = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 10), pm);
+                eyelid.position.set(x, 0.82, 0.12); eyelid.scale.set(1.0, 0.2, 0.6); g.add(eyelid);
+            });
+
+            // Nose
+            const nose = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), new THREE.MeshStandardMaterial({ color: 0xFF9EB5 }));
+            nose.position.set(0, 0.6, 0.16); g.add(nose);
+
+            // Smirk
+            const smile = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.018, 6, 12), new THREE.MeshStandardMaterial({ color: 0x8B0000 }));
+            smile.position.set(0.02, 0.43, 0.14); smile.rotation.x = 0.1; smile.rotation.z = -0.15; smile.scale.set(1.0, 0.2, 0.3); g.add(smile);
+
+            // Eyebrows — left raised
+            const brm = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+            const brL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.02, 0.03), brm);
+            brL.position.set(-0.1, 0.95, 0.08); brL.rotation.z = 0.25; g.add(brL);
+            const brR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.02, 0.03), brm);
+            brR.position.set(0.1, 0.87, 0.08); brR.rotation.z = -0.08; g.add(brR);
+
+            // Green shorts (center)
+            const shorts = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.34, 0.2, 10), gM);
+            shorts.position.set(0, 0.0, 0); g.add(shorts);
+
+            // Belt
+            const belt = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.025, 6, 10), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+            belt.position.set(0, 0.1, 0); belt.rotation.x = Math.PI / 2; g.add(belt);
+
+            // Purple flowers
+            const fpM = new THREE.MeshStandardMaterial({ color: 0x9B59B6, roughness: 0.7 });
+            const fcM = new THREE.MeshStandardMaterial({ color: 0xFFD700 });
+            [-0.08, 0.08].forEach(x => {
+                for (let a = 0; a < 5; a++) {
+                    const petal = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), fpM);
+                    petal.position.set(x + Math.sin(a * 1.256) * 0.03, -0.05, 0.16 + Math.cos(a * 1.256) * 0.03);
+                    g.add(petal);
+                }
+                const center = new THREE.Mesh(new THREE.SphereGeometry(0.012, 6, 6), fcM);
+                center.position.set(x, -0.05, 0.2); g.add(center);
+            });
+
+            // LEGS = bottom rays elongated
+            const lm = new THREE.MeshStandardMaterial({ color: 0xFFB6C1, roughness: 0.85 });
+            const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.095, 0.55, 10), lm);
+            legL.position.set(-0.5, -0.75, 0); legL.rotation.z = 0.15; legL.castShadow = true; g.add(legL);
+            leftLeg = legL;
+            const footL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.18), new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 }));
+            footL.position.set(-0.5, -1.03, 0.05); g.add(footL);
+
+            const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.095, 0.55, 10), lm);
+            legR.position.set(0.5, -0.75, 0); legR.rotation.z = -0.15; legR.castShadow = true; g.add(legR);
+            rightLeg = legR;
+            const footR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.18), new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 }));
+            footR.position.set(0.5, -1.03, 0.05); g.add(footR);
+
+            // Side arms are star body — tiny refs for animation
+            const am = new THREE.MeshStandardMaterial({ color: 0xFFB6C1, roughness: 0.85 });
+            [-0.28, 0.28].forEach((x, idx) => {
+                const stub = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.01, 6), am);
+                stub.position.set(x, 0.0, 0); g.add(stub);
+                if (idx === 0) leftArm = stub; else rightArm = stub;
+            });
+        }
+
+        function buildSquidward(g) {
+            const sm = new THREE.MeshStandardMaterial({ color: 0x7dcea0 });
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), sm);
+            head.position.y = 0.95; head.scale.set(0.85, 1.1, 0.9); head.castShadow = true; g.add(head);
+            // Neck
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.25, 10), sm);
+            neck.position.y = 0.6; g.add(neck);
+            // Body
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 0.45, 12), sm);
+            body.position.y = 0.32; body.castShadow = true; g.add(body);
+            // Eyes - droopy/sleepy
+            const we = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const pe = new THREE.MeshStandardMaterial({ color: 0x000000 });
+            [-0.16, 0.16].forEach(x => {
+                const e = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), we);
+                e.position.set(x, 1.02, 0.38); g.add(e);
+                const pu = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), pe);
+                pu.position.set(x, 1.02, 0.47); g.add(pu);
+                // Droopy eyelid (half-covering top of eye)
+                const lid = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), sm);
+                lid.position.set(x, 1.06, 0.39); lid.scale.set(1.0, 0.4, 0.8); g.add(lid);
+            });
+            // Big nose (sits between and below eyes)
+            const nmN = new THREE.MeshStandardMaterial({ color: 0x90ee90 });
+            const nose = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.09, 0.28, 10), nmN);
+            nose.position.set(0, 0.92, 0.45); nose.rotation.x = 0.35; g.add(nose);
+            // Frown
+            const fr = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.018, 0.04), new THREE.MeshStandardMaterial({ color: 0x444444 }));
+            fr.position.set(0, 0.7, 0.44); fr.rotation.z = 0.05; g.add(fr);
+            // White shirt with red tie
+            const shirt = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.16, 0.3), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+            shirt.position.set(0, 0.22, 0); g.add(shirt);
+            const tie = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, 0.04), new THREE.MeshStandardMaterial({ color: 0xcc0000 }));
+            tie.position.set(0, 0.17, 0.2); g.add(tie);
+            const collarL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.02, 0.08), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+            collarL.position.set(-0.06, 0.28, 0.18); collarL.rotation.z = 0.3; g.add(collarL);
+            const collarR = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.02, 0.08), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+            collarR.position.set(0.06, 0.28, 0.18); collarR.rotation.z = -0.3; g.add(collarR);
+            // Dark pants
+            const pants = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.08, 0.3), new THREE.MeshStandardMaterial({ color: 0x1a1a2e }));
+            pants.position.set(0, 0.04, 0); g.add(pants);
+            // Legs
+            const lM = new THREE.MeshStandardMaterial({ color: 0x7dcea0 });
+            [-0.12, 0.12].forEach((x, idx) => {
+                const l = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.15, 8), lM);
+                l.position.set(x, -0.06, 0); l.castShadow = true; g.add(l);
+                if (idx===0) leftLeg=l; else rightLeg=l;
+            });
+            // Arms
+            const aM = new THREE.MeshStandardMaterial({ color: 0x7dcea0 });
+            [-0.4, 0.4].forEach((x, idx) => {
+                const a = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.3, 8), aM);
+                a.position.set(x, 0.35, 0); a.rotation.z = x>0?-0.3:0.3; a.castShadow = true; g.add(a);
+                if (idx===0) leftArm=a; else rightArm=a;
+            });
+        }
+
+        function buildKrabs(g) {
+            const km = new THREE.MeshStandardMaterial({ color: 0xcc0000 });
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.35,16,16), km);
+            body.position.y = 0.4; body.scale.set(1.1,0.8,0.9); body.castShadow = true; g.add(body);
+            const we = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const pe = new THREE.MeshStandardMaterial({ color: 0x000000 });
+            [-0.15,0.15].forEach(x => {
+                const st = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.04,0.15,6), km);
+                st.position.set(x,0.65,0.3); g.add(st);
+                const e = new THREE.Mesh(new THREE.SphereGeometry(0.1,12,12), we);
+                e.position.set(x,0.72,0.35); g.add(e);
+                const pu = new THREE.Mesh(new THREE.SphereGeometry(0.04,8,8), pe);
+                pu.position.set(x,0.72,0.42); g.add(pu);
+            });
+            const bt = new THREE.Mesh(new THREE.BoxGeometry(0.55,0.1,0.3), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+            bt.position.set(0,0.2,0); g.add(bt);
+            const pn = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.08,0.3), new THREE.MeshStandardMaterial({ color: 0x8B4513 }));
+            pn.position.set(0,0.05,0); g.add(pn);
+            const lM = new THREE.MeshStandardMaterial({ color: 0xcc0000 });
+            [-0.16,0.16].forEach((x, idx) => {
+                const l = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.2,0.14), lM);
+                l.position.set(x,-0.1,0); l.castShadow = true; g.add(l);
+                if (idx===0) leftLeg=l; else rightLeg=l;
+            });
+            const cM = new THREE.MeshStandardMaterial({ color: 0xcc0000 });
+            [-0.45,0.45].forEach((x, idx) => {
+                const cl = new THREE.Mesh(new THREE.BoxGeometry(0.22,0.1,0.15), cM);
+                cl.position.set(x,0.45,0.25); g.add(cl);
+                const ar = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,0.3,6), cM);
+                ar.position.set(x,0.4,0.1); ar.rotation.z = x>0?-0.4:0.4; ar.castShadow = true; g.add(ar);
+                if (idx===0) leftArm=ar; else rightArm=ar;
+            });
+        }
+
+        const CHARACTERS = {
+            spongebob: { name: 'Губка Боб', emoji: '🧽', color: '#FFD700', price: 0, build: buildSpongeBob },
+            patrick: { name: 'Патрик', emoji: '⭐', color: '#FFB6C1', price: 100, build: buildPatrick },
+            squidward: { name: 'Сквидвард', emoji: '🐙', color: '#90EE90', price: 200, build: buildSquidward },
+            krabs: { name: 'Мистер Крабс', emoji: '🦀', color: '#FF0000', price: 300, build: buildKrabs }
+        };
+        const CHAR_ORDER = ['spongebob', 'patrick', 'squidward', 'krabs'];
+
+        let currentChar = localStorage.getItem('sb_char') || 'spongebob';
+        let totalCoins = parseInt(localStorage.getItem('sb_coins') || '0');
+        let purchased = JSON.parse(localStorage.getItem('sb_purchased') || '["spongebob"]');
+
+        function saveCoins() {
+            localStorage.setItem('sb_coins', String(totalCoins));
+        }
+        function savePurchased() {
+            localStorage.setItem('sb_purchased', JSON.stringify(purchased));
+        }
+        function updateCoinDisplay() {
+            document.getElementById('menuCoinCount').textContent = totalCoins;
+            const sc = document.getElementById('shopCoinCount');
+            if (sc) sc.textContent = totalCoins;
+        }
+
+        function buildPlayer() {
+            while(playerGroup.children.length > 0) playerGroup.remove(playerGroup.children[0]);
+            leftArm = rightArm = leftLeg = rightLeg = null;
+            CHARACTERS[currentChar].build(playerGroup);
+            playerGroup.position.set(0, -0.2, 2.8);
+        }
+        buildPlayer();
+
+        // ===== MENU / SHOP =====
+        function refreshShop() {
+            const grid = document.getElementById('charGrid');
+            grid.innerHTML = '';
+            updateCoinDisplay();
+            CHAR_ORDER.forEach(id => {
+                const ch = CHARACTERS[id];
+                const owned = purchased.includes(id);
+                const canBuy = !owned && totalCoins >= ch.price;
+                const card = document.createElement('div');
+                card.className = 'char-card' + (id === currentChar ? ' selected' : '');
+                let statusText;
+                if (id === currentChar) statusText = '✓ ВЫБРАН';
+                else if (owned) statusText = 'ВЫБРАТЬ';
+                else statusText = `🪙 ${ch.price}`;
+                card.innerHTML = `<div class="preview" style="background:${ch.color}">${ch.emoji}</div>
+                    <div class="name">${ch.name}</div>
+                    <div class="status">${statusText}</div>`;
+                card.addEventListener('click', () => {
+                    if (owned) {
+                        currentChar = id;
+                        localStorage.setItem('sb_char', id);
+                        refreshShop();
+                        document.getElementById('menuSelectedChar').textContent = ch.name;
+                        buildPlayer();
+                    } else if (canBuy) {
+                        totalCoins -= ch.price;
+                        purchased.push(id);
+                        saveCoins();
+                        savePurchased();
+                        currentChar = id;
+                        localStorage.setItem('sb_char', id);
+                        refreshShop();
+                        document.getElementById('menuSelectedChar').textContent = ch.name;
+                        buildPlayer();
+                    } else {
+                        card.style.borderColor = '#ff4444';
+                        setTimeout(() => refreshShop(), 400);
+                    }
+                });
+                grid.appendChild(card);
+            });
+        }
+
+        let gameRunning = false;
+        let score = 0, fishCount = 0;
+        let scrollSpeed = 0.24, baseSpeed = 0.24;
+        let targetLane = 1;
+        let isJumping = false, isSliding = false, jumpVelocity = 0;
+        let originalY = -0.2;
+        let obstacles = [], fishCoins = [];
+        let frameCounter = 0, fishSpawnCounter = 0, spawnDelay = 55;
+        let animTime = 0, scrollOffset = 0;
+
+        function showGameUI() {
+            ['score','fishCount','controls','info'].forEach(id => {
+                const el = document.getElementById(id) || document.querySelector('.'+id);
+                if (el) el.style.display = 'block';
+            });
+        }
+
+        function hideGameUI() {
+            ['score','fishCount','controls','info'].forEach(id => {
+                const el = document.getElementById(id) || document.querySelector('.'+id);
+                if (el) el.style.display = 'none';
+            });
+        }
+
+        document.getElementById('playBtn').addEventListener('click', () => {
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('shopMenu').classList.add('hidden');
+            showGameUI();
+            gameRunning = true;
+            score = 0; fishCount = 0;
+            scrollSpeed = baseSpeed; targetLane = 1;
+            isJumping = false; isSliding = false; jumpVelocity = 0;
+            obstacles.forEach(o => scene.remove(o.mesh));
+            obstacles = [];
+            fishCoins.forEach(f => scene.remove(f.mesh));
+            fishCoins = [];
+            frameCounter = 0; fishSpawnCounter = 0; spawnDelay = 55;
+            playerGroup.position.set(0, -0.2, 2.8);
+            document.getElementById('scoreNum').textContent = '0';
+            document.getElementById('fishNum').textContent = '0';
+            document.getElementById('gameOver').style.display = 'none';
+            buildPlayer();
+        });
+
+        document.getElementById('shopBtn').addEventListener('click', () => {
+            document.getElementById('shopMenu').classList.remove('hidden');
+            updateCoinDisplay();
+            refreshShop();
+        });
+
+        document.getElementById('shopBackBtn').addEventListener('click', () => {
+            document.getElementById('shopMenu').classList.add('hidden');
+        });
+
+        document.getElementById('menuSelectedChar').textContent = CHARACTERS[currentChar].name;
+        updateCoinDisplay();
+
+        // ===== FISH COINS =====
+        function createFishCoin(lane, zPos) {
+            const g = new THREE.Group();
+            const colors = [0xffd700, 0xffaa00, 0xffcc44];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.1 });
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.12,8,8), mat);
+            body.scale.set(1.5,0.7,0.6); body.position.z = 0.1; g.add(body);
+            const tail = new THREE.Mesh(new THREE.ConeGeometry(0.08,0.16,4), mat);
+            tail.rotation.x = Math.PI/2; tail.position.z = -0.14; g.add(tail);
+            const we = new THREE.Mesh(new THREE.SphereGeometry(0.03,6,6), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+            we.position.set(0.06,0.06,0.16); g.add(we);
+            const wp = new THREE.Mesh(new THREE.SphereGeometry(0.015,6,6), new THREE.MeshStandardMaterial({ color: 0x000000 }));
+            wp.position.set(0.06,0.06,0.18); g.add(wp);
+            const glow = new THREE.Mesh(new THREE.SphereGeometry(0.18,8,8), new THREE.MeshStandardMaterial({ color: 0xffdd44, transparent: true, opacity: 0.15 }));
+            glow.position.z = 0.1; g.add(glow);
+            g.position.set(railPositions[lane], 0.3, zPos);
+            g.userData = { bobPhase: Math.random() * Math.PI * 2 };
+            scene.add(g);
+            return g;
+        }
+
+        function spawnFishCoin() {
+            if (!gameRunning) return;
+            const lane = Math.floor(Math.random() * 3);
+            fishCoins.push({ mesh: createFishCoin(lane, -24), lane, z: -24, collected: false });
+        }
+
+        // ===== BOATS =====
+        function createObstacle(lane, zPos) {
+            const g = new THREE.Group();
+            const colors = [0xe74c3c, 0x3498db, 0x9b59b6, 0xf39c12, 0x1abc9c];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const hm = new THREE.MeshStandardMaterial({ color });
+            const hull = new THREE.Mesh(new THREE.BoxGeometry(1.0,0.35,1.8), hm);
+            hull.position.y = 0.12; hull.castShadow = true; g.add(hull);
+            const bow = new THREE.Mesh(new THREE.CylinderGeometry(0,0.5,0.6,4), hm);
+            bow.position.set(0,0.12,0.95); bow.rotation.x = Math.PI/2; bow.castShadow = true; g.add(bow);
+            const deck = new THREE.Mesh(new THREE.BoxGeometry(0.9,0.06,1.6), new THREE.MeshStandardMaterial({ color: 0xdeb887 }));
+            deck.position.set(0,0.3,0); deck.castShadow = true; g.add(deck);
+            const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.25,0.5), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+            cabin.position.set(0,0.5,-0.2); cabin.castShadow = true; g.add(cabin);
+            const win = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.15,0.05), new THREE.MeshStandardMaterial({ color: 0x88ddff }));
+            win.position.set(0,0.5,0.08); g.add(win);
+            const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.04,0.9,6), new THREE.MeshStandardMaterial({ color: 0x8B5A2B }));
+            mast.position.set(0,0.8,0.35); mast.castShadow = true; g.add(mast);
+            const sail = new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.6), new THREE.MeshStandardMaterial({ color: 0xfff8e7, side: THREE.DoubleSide }));
+            sail.position.set(0,0.75,0.6); sail.rotation.y = Math.PI/2; g.add(sail);
+            const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.2,0.15), new THREE.MeshStandardMaterial({ color: 0xff4444, side: THREE.DoubleSide }));
+            flag.position.set(0.1,1.25,0.35); flag.rotation.y = Math.PI/2; g.add(flag);
+            g.position.set(railPositions[lane], -0.32, zPos);
+            g.castShadow = true;
+            scene.add(g);
+            return g;
+        }
+
+        function updatePlayerPosition() {
+            const targetX = railPositions[targetLane];
+            playerGroup.position.x += (targetX - playerGroup.position.x) * 0.22;
+        }
+
+        function spawnObstacle() {
+            if (!gameRunning) return;
+            obstacles.push({ mesh: createObstacle(Math.floor(Math.random()*3), -24), lane: Math.floor(Math.random()*3), z: -24 });
+        }
+
+        // ===== INPUT =====
+        window.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            if (e.key === 'ArrowLeft') { targetLane = Math.max(0, targetLane-1); e.preventDefault(); }
+            else if (e.key === 'ArrowRight') { targetLane = Math.min(2, targetLane+1); e.preventDefault(); }
+            else if (e.key === 'ArrowUp' && !isJumping && !isSliding) { isJumping = true; jumpVelocity = 0.28; e.preventDefault(); }
+            else if (e.key === 'ArrowDown' && !isSliding && !isJumping) { isSliding = true; playerGroup.scale.y = 0.5; e.preventDefault(); }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowDown' && isSliding) { isSliding = false; playerGroup.scale.y = 1; }
+        });
+
+        // ===== ANIMATION =====
+        function animate() {
+            if (!gameRunning) {
+                bubbles.forEach(b => {
+                    b.position.y += b.userData.speed;
+                    b.position.x += Math.sin(Date.now()*0.001+b.userData.phase)*0.001;
+                    if (b.position.y > 13) b.position.y = -2;
+                });
+                renderer.render(scene, camera);
+                requestAnimationFrame(animate);
+                return;
+            }
+            animTime += 0.04;
+
+            bubbles.forEach(b => {
+                b.position.y += b.userData.speed;
+                b.position.x += Math.sin(Date.now()*0.001+b.userData.phase)*0.001;
+                if (b.position.y > 13) b.position.y = -2;
+            });
+            scrollOffset += scrollSpeed;
+            railsGroup.position.z = scrollOffset % 2;
+
+            if (leftLeg && rightLeg) {
+                const la = Math.sin(animTime*13)*0.55;
+                leftLeg.rotation.x = la; rightLeg.rotation.x = -la;
+            }
+            if (leftArm && rightArm) {
+                const aa = Math.sin(animTime*13)*0.75;
+                leftArm.rotation.z = aa; rightArm.rotation.z = -aa;
+            }
+
+            if (!isJumping && !isSliding) playerGroup.position.y = originalY + Math.sin(animTime*20)*0.03;
+            updatePlayerPosition();
+
+            if (isJumping) {
+                playerGroup.position.y += jumpVelocity;
+                jumpVelocity -= 0.019;
+                if (playerGroup.position.y <= originalY) { playerGroup.position.y = originalY; isJumping = false; jumpVelocity = 0; }
+            }
+
+            for (let i = 0; i < obstacles.length; i++) {
+                obstacles[i].z += scrollSpeed;
+                obstacles[i].mesh.position.z = obstacles[i].z;
+                const dx = Math.abs(playerGroup.position.x - obstacles[i].mesh.position.x);
+                const dz = Math.abs(playerGroup.position.z - obstacles[i].z);
+                if (dx < 0.7 && dz < 0.9 && !isJumping && !isSliding) {
+                    gameRunning = false;
+                    document.getElementById('gameOver').style.display = 'block';
+                    document.getElementById('finalScore').innerHTML = Math.floor(score);
+                    document.getElementById('finalFish').textContent = fishCount;
+                }
+                if (obstacles[i].z > 15) { scene.remove(obstacles[i].mesh); obstacles.splice(i,1); i--; }
+            }
+
+            frameCounter++;
+            if (frameCounter > spawnDelay) {
+                spawnObstacle(); frameCounter = 0;
+                spawnDelay = 38 + Math.floor(Math.random()*42);
+                scrollSpeed = Math.min(0.48, baseSpeed + score/1000);
+            }
+
+            for (let i = 0; i < fishCoins.length; i++) {
+                if (fishCoins[i].collected) {
+                    if (fishCoins[i].mesh.parent) scene.remove(fishCoins[i].mesh);
+                    fishCoins.splice(i,1); i--; continue;
+                }
+                const f = fishCoins[i];
+                f.z += scrollSpeed;
+                f.mesh.position.z = f.z;
+                f.mesh.position.y = 0.3 + Math.sin(animTime*4+f.mesh.userData.bobPhase)*0.15;
+                f.mesh.rotation.y += 0.03;
+                if (Math.abs(f.mesh.position.x - playerGroup.position.x) < 0.6 && Math.abs(f.z-2.8) < 0.7) {
+                    f.collected = true; fishCount++; score += 10;
+                    totalCoins++;
+                    saveCoins();
+                    document.getElementById('fishNum').textContent = fishCount;
+                    f.mesh.scale.set(0.01,0.01,0.01);
+                    setTimeout(() => { if (f.mesh.parent) scene.remove(f.mesh); }, 200);
+                }
+                if (f.z > 15) { scene.remove(f.mesh); fishCoins.splice(i,1); i--; }
+            }
+            fishSpawnCounter++;
+            if (fishSpawnCounter > 15 + Math.floor(Math.random()*20)) { spawnFishCoin(); fishSpawnCounter = 0; }
+
+            score += 0.22;
+            document.getElementById('scoreNum').textContent = Math.floor(score);
+            camera.position.x += (playerGroup.position.x - camera.position.x) * 0.07;
+            const camY = 2.6 + (isJumping ? 0.5 : 0);
+            camera.position.y += (camY - camera.position.y) * 0.1;
+            camera.lookAt(playerGroup.position.x, 1.2 + (isJumping ? 0.6 : 0), playerGroup.position.z - 1);
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
